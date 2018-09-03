@@ -34,34 +34,11 @@ func NewClient(token string) (*Client, error) {
 
 // GetIssueEvents returns all events available for an issue.
 func (c *Client) GetIssueEvents(ctx context.Context, repoID, issueNumber int) ([]Event, error) {
-
 	url := fmt.Sprintf("%s/p1/repositories/%d/issues/%d/events", c.url, repoID, issueNumber)
 
-	req, err := http.NewRequest("GET", url, nil)
+	body, err := get(ctx, url, c.token)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create request %q", url)
-	}
-
-	req = req.WithContext(ctx)
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Authentication-Token", c.token)
-
-	client := &http.Client{}
-
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to send request %q", url)
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read response body %q", url)
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("failed to send request [%d] %q %s", res.StatusCode, url, body)
+		return nil, err
 	}
 
 	var payload []event
@@ -108,31 +85,9 @@ func (c *Client) GetBoard(ctx context.Context, repoID int) (Board, error) {
 
 	board := Board{}
 
-	req, err := http.NewRequest("GET", url, nil)
+	body, err := get(ctx, url, c.token)
 	if err != nil {
-		return board, errors.Wrapf(err, "failed to create request %q", url)
-	}
-
-	req = req.WithContext(ctx)
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Authentication-Token", c.token)
-
-	client := &http.Client{}
-
-	res, err := client.Do(req)
-	if err != nil {
-		return board, errors.Wrapf(err, "failed to send request %q", url)
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return board, errors.Wrapf(err, "failed to read response body %q", url)
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return board, errors.Errorf("failed to send request [%d] %q %s", res.StatusCode, url, body)
+		return board, err
 	}
 
 	err = json.Unmarshal(body, &board)
@@ -141,4 +96,35 @@ func (c *Client) GetBoard(ctx context.Context, repoID int) (Board, error) {
 	}
 
 	return board, nil
+}
+
+func get(ctx context.Context, url, token string) ([]byte, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to create request %q", url)
+	}
+
+	req = req.WithContext(ctx)
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Authentication-Token", token)
+
+	client := &http.Client{}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to send request %q", url)
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to read response body %q", url)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("failed to send request [%d] %q %s", res.StatusCode, url, body)
+	}
+
+	return body, nil
 }
