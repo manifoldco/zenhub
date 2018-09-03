@@ -168,6 +168,24 @@ func TestGetIssueEvents(t *testing.T) {
 			},
 		},
 		{
+			scenario: "unknown event type",
+			status:   200,
+			response: `
+		[
+		{
+			"user_id": 16717,
+			"type": "unknown event",
+			"created_at": "2015-12-11T19:43:22.296Z",
+			"from_estimate": {
+				"value": 8
+			}
+		}
+		]
+		`,
+			success: false,
+			err:     errors.New("unknown event type"),
+		},
+		{
 			scenario: "server error",
 			status:   500,
 			response: "Internal Server Error",
@@ -379,4 +397,41 @@ func TestGetBoard(t *testing.T) {
 
 		})
 	}
+}
+
+func TestGet(t *testing.T) {
+	token := "ABC"
+
+	t.Run("invalid url", func(t *testing.T) {
+		ctx := context.Background()
+
+		_, err := get(ctx, ":]/", token)
+		if err == nil {
+			t.Error("expected error, got none")
+		}
+	})
+
+	t.Run("invalid server", func(t *testing.T) {
+		ctx := context.Background()
+
+		_, err := get(ctx, "/", token)
+		if err == nil {
+			t.Error("expected error, got none")
+		}
+	})
+
+	t.Run("status not ok", func(t *testing.T) {
+		ctx := context.Background()
+
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(204)
+			w.Write(nil)
+		}))
+		defer srv.Close()
+
+		_, err := get(ctx, srv.URL, token)
+		if err == nil {
+			t.Error("expected error, got none")
+		}
+	})
 }

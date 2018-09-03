@@ -51,7 +51,7 @@ func (c *Client) GetIssueEvents(ctx context.Context, repoID, issueNumber int) ([
 	events := make([]Event, len(payload))
 
 	for i, p := range payload {
-		switch p.Type {
+		switch t := p.Type; t {
 		case "estimateIssue":
 			event := EstimateIssueEvent{
 				UserID:       p.UserID,
@@ -71,7 +71,7 @@ func (c *Client) GetIssueEvents(ctx context.Context, repoID, issueNumber int) ([
 
 			events[i] = event
 		default:
-			return nil, errors.Errorf("unknown event type %q", p.Type)
+			return nil, ErrUnknownEventType{t: t}
 		}
 
 	}
