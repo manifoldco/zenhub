@@ -82,7 +82,6 @@ func (c *Client) GetIssueEvents(ctx context.Context, repoID, issueNumber int) ([
 
 			events[i] = event
 		case "transferIssue":
-
 			event := TransferIssueEvent{
 				UserID:       p.UserID,
 				CreatedAt:    p.CreatedAt,

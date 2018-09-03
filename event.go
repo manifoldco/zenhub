@@ -1,6 +1,9 @@
 package zenhub
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // EventType represents what type an event is.
 type EventType string
@@ -11,7 +14,20 @@ const (
 
 	// EventTypeTransferIssue is the type for the transfer issue event
 	EventTypeTransferIssue EventType = "transferIssue"
+
+	// EventTypeIssueEstiTransfer is the type for issue transfer webhook event
+	EventTypeIssueTransfer EventType = "issue_transfer"
 )
+
+// ErrUnknownEventType is an error returned when an event cannot be parsed.
+type ErrUnknownEventType struct {
+	t string
+}
+
+// Error returns a custom error message.
+func (e ErrUnknownEventType) Error() string {
+	return fmt.Sprintf("unknown event type %q", e.t)
+}
 
 // Event is an interface implemented by all event types. EventType() can be used
 // to find its type and cast the event to that type.
@@ -19,8 +35,8 @@ type Event interface {
 	EventType() EventType
 }
 
-// EstimateIssueEvent represents an event when an issue has its estimate value
-// set or unset.
+// EstimateIssueEvent is an event when an issue has its estimate value set or
+// unset.
 type EstimateIssueEvent struct {
 	UserID       int
 	CreatedAt    time.Time
