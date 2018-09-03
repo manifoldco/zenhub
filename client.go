@@ -12,11 +12,13 @@ import (
 
 const apiURL = "https://api.zenhub.io"
 
+// Client represents a ZenHub API HTTP client.
 type Client struct {
 	url   string
 	token string
 }
 
+// NewClient returns a new ZenHub client for the authentication token passed in.
 func NewClient(token string) (*Client, error) {
 	if token == "" {
 		return nil, errors.New("invalid token")
@@ -30,6 +32,7 @@ func NewClient(token string) (*Client, error) {
 	return c, nil
 }
 
+// GetIssueEvents returns all events available for an issue.
 func (c *Client) GetIssueEvents(ctx context.Context, repoID, issueNumber int) ([]Event, error) {
 
 	url := fmt.Sprintf("%s/p1/repositories/%d/issues/%d/events", c.url, repoID, issueNumber)
@@ -97,4 +100,45 @@ func (c *Client) GetIssueEvents(ctx context.Context, repoID, issueNumber int) ([
 	}
 
 	return events, nil
+}
+
+// GetBoard returns the board information for a repository.
+func (c *Client) GetBoard(ctx context.Context, repoID int) (Board, error) {
+	url := fmt.Sprintf("%s/p1/repositories/%d/board", c.url, repoID)
+
+	board := Board{}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return board, errors.Wrapf(err, "failed to create request %q", url)
+	}
+
+	req = req.WithContext(ctx)
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Authentication-Token", c.token)
+
+	client := &http.Client{}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return board, errors.Wrapf(err, "failed to send request %q", url)
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return board, errors.Wrapf(err, "failed to read response body %q", url)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return board, errors.Errorf("failed to send request [%d] %q %s", res.StatusCode, url, body)
+	}
+
+	err = json.Unmarshal(body, &board)
+	if err != nil {
+		return board, errors.Errorf("failed to unmarshal payload %q %s", url, body)
+	}
+
+	return board, nil
 }

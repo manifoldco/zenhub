@@ -78,8 +78,3 @@ type event struct {
 type Estimate struct {
 	Value int `json:"value"`
 }
-
-// Pipeline represents a ZenHub pipeline.
-type Pipeline struct {
-	Name string `json:"name"`
-}

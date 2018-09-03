@@ -208,3 +208,175 @@ func TestGetIssueEvents(t *testing.T) {
 		})
 	}
 }
+
+func TestGetBoard(t *testing.T) {
+	c, err := NewClient("ABC")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tcs := []struct {
+		scenario string
+		status   int
+		response string
+		success  bool
+		board    Board
+		err      error
+	}{
+		{
+			scenario: "successful request",
+			status:   200,
+			response: `
+						{
+				"pipelines": [
+				{
+					"id": "595d430add03f01d32460080",
+					"name": "New Issues",
+					"issues": [
+					{
+						"issue_number": 279,
+						"estimate": { "value": 40 },
+						"position": 0,
+						"is_epic": true
+					},
+					{
+						"issue_number": 142,
+						"is_epic": false
+					}
+					]
+				},
+				{
+					"id": "595d430add03f01d32460081",
+					"name": "Backlog",
+					"issues": [
+					{
+						"issue_number": 303,
+						"estimate": { "value": 40 },
+						"position": 3,
+						"is_epic": false
+					}
+					]
+				},
+				{
+					"id": "595d430add03f01d32460082",
+					"name": "To Do",
+					"issues": [
+					{
+						"issue_number": 380,
+						"estimate": { "value": 1 },
+						"position": 0,
+						"is_epic": true
+					},
+					{
+						"issue_number": 284,
+						"position": 2,
+						"is_epic": false
+					},
+					{
+						"issue_number": 329,
+						"estimate": { "value": 8 },
+						"position": 7,
+						"is_epic": false
+					}
+					]
+				}
+				]
+			}
+			`,
+			success: true,
+			board: Board{
+				Pipelines: []Pipeline{
+					{
+						ID:   "595d430add03f01d32460080",
+						Name: "New Issues",
+						Issues: []Issue{
+							{
+								IssueNumber: 279,
+								Estimate:    &Estimate{Value: 40},
+								Position:    0,
+								IsEpic:      true,
+							},
+							{
+								IssueNumber: 142,
+								IsEpic:      false,
+							},
+						},
+					},
+					{
+						ID:   "595d430add03f01d32460081",
+						Name: "Backlog",
+						Issues: []Issue{
+							{
+								IssueNumber: 303,
+								Estimate:    &Estimate{Value: 40},
+								Position:    3,
+								IsEpic:      false,
+							},
+						},
+					},
+					{
+						ID:   "595d430add03f01d32460082",
+						Name: "To Do",
+						Issues: []Issue{
+							{
+								IssueNumber: 380,
+								Estimate:    &Estimate{Value: 1},
+								IsEpic:      true,
+							},
+							{
+								IssueNumber: 284,
+								Position:    2,
+								IsEpic:      false,
+							},
+							{
+								IssueNumber: 329,
+								Estimate:    &Estimate{Value: 8},
+								Position:    7,
+								IsEpic:      false,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			scenario: "server error",
+			status:   500,
+			response: "Internal Server Error",
+			success:  false,
+			err:      errors.New("failed to send request [500]"),
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.scenario, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tc.status)
+				w.Header().Set("Content-type", "application/json")
+				w.Write([]byte(tc.response))
+			}))
+			defer srv.Close()
+
+			c.url = srv.URL
+
+			ctx := context.Background()
+
+			board, err := c.GetBoard(ctx, 123)
+
+			if tc.success {
+				if err != nil {
+					t.Fatalf("expected no error, got %v", err)
+				}
+
+				if !reflect.DeepEqual(tc.board, board) {
+					t.Fatalf("expected board to eq %v, got %v", tc.board, board)
+				}
+			} else {
+				if !strings.HasPrefix(err.Error(), tc.err.Error()) {
+					t.Fatalf("expected error %v, got %v", tc.err, err)
+				}
+			}
+
+		})
+	}
+}
