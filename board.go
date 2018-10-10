@@ -13,7 +13,7 @@ type Pipeline struct {
 	Issues []Issue `json:"issues"`
 }
 
-// Pipeline represents a ZenHub issue.
+// Issue represents a ZenHub issue.
 type Issue struct {
 	IssueNumber int       `json:"issue_number"`
 	Estimate    *Estimate `json:"estimate"`

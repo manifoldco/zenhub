@@ -15,7 +15,7 @@ const (
 	// EventTypeTransferIssue is the type for the transfer issue event
 	EventTypeTransferIssue EventType = "transferIssue"
 
-	// EventTypeIssueEstiTransfer is the type for issue transfer webhook event
+	// EventTypeIssueTransfer is the type for issue transfer webhook event
 	EventTypeIssueTransfer EventType = "issue_transfer"
 )
 
